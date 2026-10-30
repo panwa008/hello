@@ -1,0 +1,41 @@
+{
+  "name": "hello",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev-all.mjs",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "dev:web": "vite",
+    "dev:api": "npm --prefix ../hello-backend run dev",
+    "dev:all": "node scripts/dev-all.mjs",
+    "build:api": "npm --prefix ../hello-backend run build",
+    "build:all": "npm run build:api && npm run build",
+    "start:api": "npm --prefix ../hello-backend start",
+    "setup": "npm install && npm --prefix ../hello-backend install",
+    "smoke": "bash ../hello-backend/scripts/smoke.sh",
+    "typecheck": "tsc --noEmit -p .",
+    "smoke:prod-config": "npm --prefix ../hello-backend run smoke:prod-config"
+  },
+  "dependencies": {
+    "framer-motion": "^14.7.1",
+    "lucide-react": "^1.64.0",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "socket.io-client": "^4.8.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.6",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.5"
+  }
+}

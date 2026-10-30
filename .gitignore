@@ -1,0 +1,35 @@
+# --- dependencies / build output ---
+node_modules
+dist
+*.tsbuildinfo
+logs
+*.log
+backend/node_modules
+backend/dist
+backend/logs
+
+# --- runtime data (SQLite DB must never be committed) ---
+backend/data
+/data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# --- secrets ---
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.*
+!backend/.env.example
+!backend/.env.production.example
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# .env.development / .env.production (root) hold only public VITE_* values (bundled into the browser) — never put secrets there

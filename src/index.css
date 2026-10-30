@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Prompt", "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --color-lav: #E8E0F5;
+  --color-lav-50: #F6F2FC;
+  --color-plum: #9B7EBD;
+  --color-plum-600: #7E5BB5;
+  --color-plum-800: #4B3470;
+  --color-pink: #F5A9C5;
+  --color-mint: #A8E6CF;
+  --color-sky: #9FD3F5;
+  --color-peach: #FFD3B5;
+  --color-ink: #2E2342;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  color: var(--color-ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #f3d9ea 0%, transparent 60%),
+    radial-gradient(900px 600px at 110% 10%, #d8f3e8 0%, transparent 55%),
+    radial-gradient(900px 700px at 50% 120%, #dcd0f3 0%, transparent 60%),
+    #EEE7F8;
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .glass {
+    background: rgba(255,255,255,0.62);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border: 1px solid rgba(255,255,255,0.75);
+    box-shadow: 0 10px 30px -12px rgba(110, 80, 160, 0.28), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .glass-strong {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 20px 50px -20px rgba(110, 80, 160, 0.35);
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #B79BE0, #8F6BC6);
+    color: white;
+    box-shadow: 0 8px 20px -8px rgba(126, 91, 181, 0.7);
+  }
+  .chip { @apply rounded-full px-3 py-1 text-xs font-medium; }
+  .title { @apply text-[15px] font-semibold text-ink tracking-tight; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@keyframes floaty { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-10px) } }
+@keyframes breathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.02, 0.985) } }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1) } 95% { transform: scaleY(0.1) } }
+@keyframes wing { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(-10deg) } }
+@keyframes wingR { 0%,100% { transform: rotate(0deg) } 50% { transform: rotate(10deg) } }
+@keyframes sweep { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+@keyframes pulse-ring { 0% { transform: scale(.6); opacity: .7 } 100% { transform: scale(1.6); opacity: 0 } }
+@keyframes sparkle { 0%,100% { opacity: 0; transform: scale(.4) } 50% { opacity: 1; transform: scale(1) } }
+@keyframes shimmer { from { background-position: -200% 0 } to { background-position: 200% 0 } }
+.anim-float { animation: floaty 4s ease-in-out infinite; }
+.anim-breathe { animation: breathe 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+.anim-blink { animation: blink 4.5s infinite; transform-box: fill-box; transform-origin: center; }
+.anim-wing { animation: wing 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 100% 80%; }
+.anim-wingR { animation: wingR 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 80%; }
+.anim-sweep { animation: sweep 6s linear infinite; }
+.anim-sparkle { animation: sparkle 2.4s ease-in-out infinite; }
+.shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent); background-size: 200% 100%; animation: shimmer 2.5s linear infinite; }

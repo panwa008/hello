@@ -1,0 +1,36 @@
+# Hello full stack.
+#   Dev / demo:   docker compose up --build      (sandbox payments, demo people, simulated steps)
+#   Production:   cp ../hello-backend/.env.production.example ../hello-backend/.env.production
+#                 # fill in JWT_SECRET, CORS_ORIGIN, PUBLIC_API_URL, TRUEMONEY_* …
+#                 HELLO_ENV_FILE=../hello-backend/.env.production docker compose up --build -d
+#   web http://localhost:5173  ·  api http://localhost:3001/api/health   (put HTTPS in front for real use)
+services:
+  api:
+    build: ../hello-backend
+    env_file:
+      - path: ${HELLO_ENV_FILE:-../hello-backend/.env}
+        required: false
+    environment:
+      PORT: "3001"
+      HOST: 0.0.0.0
+      DB_FILE: /data/hello.db
+      TZ_APP: ${TZ_APP:-Asia/Bangkok}
+      # Without an env file this runs in development/sandbox mode. Production values come from HELLO_ENV_FILE.
+      NODE_ENV: ${NODE_ENV:-development}
+    volumes:
+      - hello-data:/data
+    ports:
+      - "127.0.0.1:3001:3001"   # API only reachable via the web proxy / localhost
+    restart: unless-stopped
+  web:
+    build:
+      context: .
+      args:
+        VITE_API_URL: /
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+volumes:
+  hello-data:
