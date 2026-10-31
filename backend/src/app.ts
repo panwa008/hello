@@ -15,6 +15,7 @@ import market from './routes/market'
 import wallet from './routes/wallet'
 import explorer from './routes/explorer'
 import games from './routes/games'
+import world from './routes/world'
 import payments, { webhooks } from './routes/payments'
 import { CATALOG } from './catalog'
 import { config, publicFeatures } from './config'
@@ -59,7 +60,7 @@ app.route('/api/me', me)
 
 const api = new Hono<AuthEnv>()
 api.use('*', requireAuth)
-for (const r of [feed, social, pets, shop, market, wallet, explorer, games, payments]) api.route('/', r)
+for (const r of [feed, social, pets, shop, market, wallet, explorer, games, payments, world]) api.route('/', r)
 app.route('/api', api)
 
 app.notFound((c) => c.json({ ok: false, error: 'ไม่พบ endpoint นี้', code: 'not_found' }, 404))

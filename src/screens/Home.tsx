@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Face, PALETTES, PetDragon, Scene } from '../components/art'
 import { MeFace } from '../components/Layout'
 import { Radar } from '../components/Radar'
+import { DailyQuests, FirstTip, LivingWorldBanner } from '../components/World'
 import { Bar, Btn, Card, Header, Sheet, Tabs } from '../components/ui'
 import { byId, STORIES } from '../data/mock'
 import { STATUS } from '../data/status'
@@ -307,7 +308,7 @@ function SideColumn() {
   const near = people.filter((p) => zone(p.distance) === 'near' && p.status !== 'hidden').length
   return (
     <div className="space-y-4">
-      <Card delay={0.1} className="cursor-pointer" onClick={() => go('explorer')}>
+      <Card delay={0.1} className="cursor-pointer !p-3" onClick={() => go('explorer')}>
         <Header title="Map Explorer" sub={`มีคน ${near} คนในรัศมี 200 ม.`} right={<span className="chip bg-lav text-plum-600">เปิดแผนที่</span>} />
         <Radar compact />
       </Card>
@@ -334,17 +335,18 @@ function SideColumn() {
 }
 
 export default function Home() {
-  const { user, d, go } = useApp()
+  const { d, go, eggSpots, online } = useApp()
+  const nearestEgg = online ? (eggSpots.length ? Math.min(...eggSpots.map((e) => e.distance)) : undefined) : 430
   const [tab, setTab] = useState<'all' | 'friends' | 'mine' | 'saved'>('all')
   const posts = d.posts.filter((p) => (tab === 'all' ? true : tab === 'friends' ? d.friends.includes(p.authorId) : tab === 'mine' ? p.authorId === 'me' : d.saved.includes(p.id)))
   const readyEggs = d.eggs.filter((e) => Date.now() - e.start >= e.dur).length
   return (
     <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
       <div className="min-w-0 space-y-4">
-        <motion.button onClick={() => go(readyEggs ? 'pets' : 'explorer')} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass flex w-full items-center gap-3 rounded-[28px] bg-gradient-to-r from-pink/40 to-lav p-4 text-left">
-          <span className="text-3xl">👋</span>
-          <div><div className="font-semibold">สวัสดี {user?.name}! วันนี้เจออะไรดี ๆ นะ~</div><div className="text-xs text-ink/55">{readyEggs ? `ไข่ ${readyEggs} ฟองพร้อมฟักแล้ว! แตะเพื่อไปที่บ้านสัตว์เลี้ยง 🐣` : 'มีไข่ลึกลับซ่อนอยู่ใกล้คุณ ลองเดินสำรวจดูสิ 🥚'}</div></div>
-        </motion.button>
+        <FirstTip />
+        <LivingWorldBanner nearestEgg={nearestEgg} />
+        {readyEggs > 0 && <motion.button onClick={() => go('pets')} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass flex w-full items-center gap-3 rounded-[24px] bg-gradient-to-r from-pink/40 to-lav p-3 text-left text-sm"><span className="text-2xl">🐣</span><span>ไข่ {readyEggs} ฟองพร้อมฟักแล้ว! แตะเพื่อไปที่บ้านสัตว์เลี้ยง</span></motion.button>}
+        <DailyQuests />
         <Stories />
         <Composer />
         <Tabs tabs={[{ id: 'all', label: 'ทั้งหมด' }, { id: 'friends', label: 'เพื่อน' }, { id: 'mine', label: 'ของฉัน' }, { id: 'saved', label: 'บันทึกไว้' }]} value={tab} onChange={setTab} />

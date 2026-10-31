@@ -6,6 +6,8 @@ import { Bar, Btn, Card, Header, PageTitle, Rarity, Sheet } from '../components/
 import { PET_POSES, PET_SHOP, PET_SLOT, PET_SLOT_LABEL } from '../data/mock'
 import { addXp, HATCH_POOL, useApp, useNow, type EggData, type PetData, type PetSlot } from '../store/AppStore'
 import { uid } from '../lib/storage'
+import { petMoodLine } from '../components/World'
+import type { CareKey } from '../lib/world'
 
 export const FOOD_FX: Record<string, { hunger: number; mood: number }> = {
   f1: { hunger: 15, mood: 2 }, f2: { hunger: 20, mood: 5 }, f3: { hunger: 25, mood: 3 }, f4: { hunger: 30, mood: 4 }, f5: { hunger: 20, mood: 20 }, f6: { hunger: 100, mood: 100 },
@@ -44,12 +46,14 @@ export default function Pets() {
   const [slot, setSlot] = useState<PetSlot>('head')
   const [bagTab, setBagTab] = useState<'food' | 'gear' | 'eggs'>('food')
   const lastPat = useRef(0)
+  const [cheer, setCheer] = useState<{ k: CareKey; t: number } | null>(null)
+  const care = (k: CareKey) => { if (app.careDone(k)) { setCheer({ k, t: Date.now() }); burst(); burst(); app.toast(k === 'feed' ? 'ดูแลประจำวัน: ป้อนข้าวแล้ว ✓' : k === 'play' ? 'ดูแลประจำวัน: เล่นด้วยแล้ว ✓' : 'ดูแลประจำวัน: พาเดินแล้ว ✓', '🐾') } }
   const online = app.online
   const feed = (id: string) => {
     const f = PET_SHOP.food.find((x) => x.id === id)!
     if ((d.food[id] ?? 0) <= 0) { app.toast('อาหารหมด ไปซื้อที่ร้านสัตว์เลี้ยงนะ', '🛒'); return }
     if (pet.hunger >= 100) { app.toast(`น้อง ${pet.name} อิ่มแล้ว~`, '😋'); return }
-    burst()
+    burst(); care('feed')
     if (online) { app.act(`/pets/${pet.id}/feed`, { food: id }).then((r) => r && app.toast(`น้อง ${pet.name} กิน${f.name} อร่อยมาก! +5 XP`, f.emoji)); return }
     const fx = FOOD_FX[id] ?? { hunger: 15, mood: 3 }
     app.up((x) => ({ ...x, food: { ...x.food, [id]: x.food[id] - 1 } }))
@@ -63,7 +67,7 @@ export default function Pets() {
   const play = () => {
     if (pet.energy < 10) { app.toast(`น้อง ${pet.name} เหนื่อยแล้ว ให้พักก่อนนะ`, '😴'); return }
     if (pet.hunger < 10) { app.toast(`น้อง ${pet.name} หิวจนเล่นไม่ไหว ให้อาหารก่อน`, '🍖'); return }
-    app.up((x) => ({ ...x, pose: 'pose3' })); burst(); burst()
+    app.up((x) => ({ ...x, pose: 'pose3' })); burst(); burst(); care('play')
     if (online) { app.act(`/pets/${pet.id}/play`).then((r) => r && app.toast(`เล่นลูกบอลกับ ${pet.name}! +8 XP`, '⚽')); return }
     app.updatePet(pet.id, (p) => ({ ...addXp(p, 8), mood: Math.min(100, p.mood + 12), energy: Math.max(0, p.energy - 10), hunger: Math.max(0, p.hunger - 4) }))
     app.toast(`เล่นลูกบอลกับ ${pet.name}! +8 XP`, '⚽')
@@ -83,10 +87,18 @@ export default function Pets() {
   }
   const toggleWalk = () => {
     const next = !d.walking
+    if (next) care('walk')
     if (online) app.act('/walking', { walking: next })
     else app.up((x) => ({ ...x, walking: next }))
     app.toast(next ? 'น้องจะเดินข้างคุณบนแผนที่' : 'เก็บน้องเข้ากระเป๋าแล้ว', next ? '🐾' : '🎒')
   }
+  const careWalk = () => {
+    if (app.world.care.walk) { app.toast(`วันนี้พา ${pet.name} เดินแล้ว~`, '🌸'); return }
+    if (!d.walking) { if (online) app.act('/walking', { walking: true }, undefined, { quiet: true }); else app.up((x) => ({ ...x, walking: true })) }
+    if (!online) app.updatePet(pet.id, (p) => ({ ...addXp(p, 5), mood: Math.min(100, p.mood + 8), energy: Math.max(0, p.energy - 5) }))
+    care('walk')
+  }
+  const moodLine = petMoodLine(pet, app.world.care, new Date(now))
   const rename = () => {
     const n = prompt('ตั้งชื่อใหม่ให้น้อง', pet.name)?.trim().slice(0, 16)
     if (!n) return
@@ -184,6 +196,7 @@ export default function Pets() {
               <div className="text-xs text-ink/55">{pet.kind} · Lv.{pet.level}</div>
               <div className="mt-2 h-1.5 w-32 overflow-hidden rounded-full bg-white"><motion.div className="h-full rounded-full bg-gradient-to-r from-plum to-pink" animate={{ width: `${pet.xp}%` }} /></div>
               <div className="mt-1 text-[10px] text-ink/40">XP {pet.xp}/100</div>
+              <motion.div key={moodLine.th} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="mt-2 max-w-[11rem] text-xs font-medium text-plum-600">{moodLine.emoji} {moodLine.th}</motion.div>
             </div>
             <div className="absolute right-3 top-3 flex sm:top-24 flex-col gap-2 sm:right-6">
               {[{ i: Utensils, l: 'ให้อาหาร', f: quickFeed }, { i: Gamepad2, l: 'เล่นด้วย', f: play }, { i: Moon, l: 'พักผ่อน', f: rest }, { i: Footprints, l: d.walking ? 'กำลังเดินข้าง' : 'พาเดิน', f: toggleWalk }, { i: Backpack, l: 'กระเป๋า', f: () => setBag(true) }].map((a) => (
@@ -193,6 +206,21 @@ export default function Pets() {
           </div>
         </Card>
         <div className="space-y-4">
+          <Card delay={0.02} className="!bg-gradient-to-br from-[#FDF1F7] to-[#EEF7F2]">
+            <Header title="ดูแลประจำวัน" sub={`Daily Care · ${pet.name} · ทำได้อย่างละครั้งต่อวัน`} right={app.world.careBonus ? <span className="chip bg-mint/60 text-emerald-700">🎀 ครบแล้ว!</span> : <span className="chip bg-white text-ink/50">ครบ 3 = +15 P</span>} />
+            <div className="grid grid-cols-3 gap-2">
+              {([{ k: 'feed', e: '🍖', th: 'ป้อนข้าว', en: 'Feed', f: quickFeed }, { k: 'play', e: '⚽', th: 'เล่นด้วย', en: 'Play', f: play }, { k: 'walk', e: '🌿', th: 'พาเดิน', en: 'Walk', f: careWalk }] as const).map((a) => {
+                const done = app.world.care[a.k]
+                return (
+                  <motion.button key={a.k} whileTap={{ scale: 0.92 }} onClick={a.f} animate={cheer?.k === a.k ? { scale: [1, 1.12, 1], rotate: [0, -4, 4, 0] } : {}} transition={{ duration: 0.5 }}
+                    className={`relative rounded-2xl p-3 text-center ${done ? 'bg-mint/50 ring-2 ring-emerald-300/60' : 'bg-white/75 hover:bg-white'}`}>
+                    <div className="text-2xl">{done ? '✅' : a.e}</div>
+                    <div className="text-xs font-semibold">{a.th}</div><div className="text-[10px] text-ink/40">{a.en}</div>
+                  </motion.button>
+                )
+              })}
+            </div>
+          </Card>
           <Card delay={0.05}>
             <Header title="สถานะน้อง" sub="ค่าสถานะลดลงตามเวลา ดูแลบ่อย ๆ นะ" right={<Btn onClick={quickFeed} className="!py-1.5 text-xs"><Utensils size={14} /> ให้อาหาร</Btn>} />
             <div className="space-y-3">

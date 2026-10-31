@@ -5,6 +5,7 @@ import type { Person } from '../data/types'
 import { zone } from '../lib/rules'
 import { Face } from './art'
 import { MeFace } from './Layout'
+import type { WorldSpot } from '../lib/world'
 
 export type RadarFilter = 'all' | 'near' | 'mid' | 'far'
 
@@ -40,9 +41,9 @@ export interface RadarEgg { id: string; distance: number; angle: number; rarity?
 export const visOf = (p: Person) => p.visibility ?? (zone(p.distance) === 'near' ? 'clear' : zone(p.distance) === 'mid' ? 'blur' : 'dot')
 export const isDot = (p: Person) => visOf(p) === 'dot' || p.id.startsWith('anon_')
 
-export function Radar({ filter = 'all', onPick, compact = false, eggs = [], onEgg }: { filter?: RadarFilter; onPick?: (p: Person) => void; compact?: boolean; eggs?: RadarEgg[]; onEgg?: (e: RadarEgg) => void }) {
+export function Radar({ filter = 'all', onPick, compact = false, eggs = [], onEgg, spots = [], onSpot, showPeople = true }: { filter?: RadarFilter; onPick?: (p: Person) => void; compact?: boolean; eggs?: RadarEgg[]; onEgg?: (e: RadarEgg) => void; spots?: WorldSpot[]; onSpot?: (s: WorldSpot) => void; showPeople?: boolean }) {
   const { people: all, d, walkSim, toast } = useApp()
-  const people = all.filter((p) => filter === 'all' || zone(p.distance) === filter)
+  const people = showPeople ? all.filter((p) => filter === 'all' || zone(p.distance) === filter) : []
   return (
     <div className="relative aspect-square w-full overflow-hidden rounded-[24px]">
       <MapBg />
@@ -93,6 +94,17 @@ export function Radar({ filter = 'all', onPick, compact = false, eggs = [], onEg
                 <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full ring-2 ring-white" style={{ background: s.color }} />
               </span>
             )}
+          </motion.button>
+        )
+      })}
+      {spots.map((sp, i) => {
+        const r = radius(sp.distance), a = (sp.angle * Math.PI) / 180
+        const sz = compact ? 20 : 32
+        return (
+          <motion.button key={sp.id} onClick={() => onSpot?.(sp)} title={`${sp.name} · ${sp.distance} ม.`} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1 + i * 0.04, type: 'spring' }} whileHover={{ scale: 1.15 }}
+            className={`absolute grid -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl ring-2 ring-white ${sp.kind === 'portal' ? 'anim-float' : ''}`}
+            style={{ left: `${50 + Math.cos(a) * r * 50}%`, top: `${50 + Math.sin(a) * r * 50}%`, width: sz, height: sz, fontSize: sz * 0.55, background: sp.color + '33', boxShadow: `0 0 ${sp.kind === 'portal' || sp.kind === 'quest' ? 14 : 6}px ${sp.color}aa`, backdropFilter: 'blur(4px)' }}>
+            {sp.emoji}
           </motion.button>
         )
       })}

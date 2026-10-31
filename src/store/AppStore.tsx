@@ -5,6 +5,7 @@ import { hashPass, inStepWindow, load, save, today, uid } from '../lib/storage'
 import { ONLINE, ApiFail, api, getTokens, setOnAuthLost, setTokens } from '../lib/api'
 import { bearingTo, destination, haversine, MOCK_HOME, toScreen } from '../lib/geo'
 import { connectRealtime } from '../lib/realtime'
+import { bkkDay, CARE_BONUS, CHECKIN_POINTS, freshWorld, type CareKey, type QuestId, type WorldDay, type WorldSpot } from '../lib/world'
 import { pedometerSupported, requestMotionPermission, startPedometer } from '../lib/pedometer'
 
 /** Server feature flags (from /api/health). Offline/demo build: everything allowed. */
@@ -508,12 +509,84 @@ function useStoreImpl() {
     toast(`${label} +${n.toLocaleString()} P`, '🎉')
   }
 
+  // ================= Living World: daily quests + pet care (device-local, Bangkok day key) =================
+  const [world, setWorld] = useState<WorldDay | null>(null)
+  const worldRef = useRef(world); worldRef.current = world
+  useEffect(() => {
+    if (!session) { setWorld(null); return }
+    const w = load<WorldDay | null>('hello.world.' + session, null)
+    setWorld(w && w.date === bkkDay() ? w : freshWorld(w?.tipDismissed))
+  }, [session])
+  useEffect(() => { if (session && world) save('hello.world.' + session, world) }, [world, session])
+  useEffect(() => {
+    const roll = () => setWorld((w) => (w && w.date !== bkkDay() ? freshWorld(w.tipDismissed) : w))
+    const t = setInterval(roll, 30_000)
+    document.addEventListener('visibilitychange', roll)
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', roll) }
+  }, [])
+  const commitWorld = (fn: (w: WorldDay) => WorldDay) => {
+    let w = worldRef.current; if (!w) return
+    if (w.date !== bkkDay()) w = freshWorld(w.tipDismissed)
+    const n = fn(w); worldRef.current = n; setWorld(n)
+    for (const q of n.quests) if (q.completed && !w.quests.find((o) => o.id === q.id)?.completed) setTimeout(() => toast(`ภารกิจสำเร็จ: ${q.titleTh} — กดรับ +${q.rewardPoints} P`, '🌟'), 0)
+  }
+  /** Set a quest's progress to at least `value`. */
+  const setQuestProgress = useCallback((id: QuestId, value: number) => commitWorld((w) => ({
+    ...w, quests: w.quests.map((q) => { if (q.id !== id || q.completed) return q; const progress = Math.min(q.target, Math.max(q.progress, value)); return progress === q.progress ? q : { ...q, progress, completed: progress >= q.target } }),
+  })), []) // eslint-disable-line react-hooks/exhaustive-deps
+  /** Add progress to a daily quest (called from steps, greet/chat and pet care). */
+  const bumpQuest = useCallback((id: QuestId, amount = 1) => {
+    const q = worldRef.current?.quests.find((x) => x.id === id)
+    setQuestProgress(id, (q && worldRef.current?.date === bkkDay() ? q.progress : 0) + amount)
+  }, [setQuestProgress])
+  // walk quest follows today's step count
+  const stepsNow = d?.steps ?? 0
+  useEffect(() => { if (world && stepsNow > 0) setQuestProgress('walk', stepsNow) }, [stepsNow, !!world]) // eslint-disable-line react-hooks/exhaustive-deps
+  const grantWorld = async (reward: string, points: number, label: string) => {
+    if (ONLINE) {
+      const r = await act('/world/claim', { reward }, 'POST', { quiet: true })
+      if (r) toast(`${label} +${points} P`, '🎉')
+      return true
+    }
+    earn(points, label); return true
+  }
+  const claimQuest = async (id: QuestId) => {
+    const q = worldRef.current?.quests.find((x) => x.id === id)
+    if (!q || !q.completed || q.claimed) return
+    commitWorld((w) => ({ ...w, quests: w.quests.map((x) => (x.id === id ? { ...x, claimed: true } : x)) }))
+    await grantWorld('quest:' + id, q.rewardPoints, `ภารกิจรายวัน: ${q.titleTh}`)
+  }
+  /** Mark one Daily Care action done for today. Returns false if already done. */
+  const careDone = (k: CareKey) => {
+    const w = worldRef.current
+    if (!w || (w.date === bkkDay() && w.care[k])) return false
+    commitWorld((x) => ({ ...x, care: { ...x.care, [k]: true } }))
+    bumpQuest('care')
+    const after = worldRef.current!
+    if (after.care.feed && after.care.play && after.care.walk && !after.careBonus) {
+      commitWorld((x) => ({ ...x, careBonus: true }))
+      setTimeout(() => grantWorld('care:all', CARE_BONUS, 'ดูแลน้องครบ 3 อย่าง 🎀'), 600)
+    }
+    return true
+  }
+  const checkIn = (s: WorldSpot) => {
+    const w = worldRef.current; if (!w) return
+    if (w.checkins.includes(s.id)) { toast(`เช็คอิน ${s.name} ไปแล้ววันนี้`, '✅'); return }
+    const first = w.checkins.length === 0
+    commitWorld((x) => ({ ...x, checkins: [...x.checkins, s.id] }))
+    if (s.quest === 'walk') bumpQuest('walk', 200)
+    if (first) grantWorld('checkin', CHECKIN_POINTS, `เช็คอิน ${s.name}`)
+    else toast(`เช็คอิน ${s.name} แล้ว ✨`, s.emoji)
+  }
+  const dismissTip = () => commitWorld((x) => ({ ...x, tipDismissed: true }))
+
   // ---- chat ----
   const pushMsg = (x: Data, peer: string, m: Msg, unread: boolean): Data => ({
     ...x, chats: { ...x.chats, [peer]: [...(x.chats[peer] ?? []), m] }, unread: unread ? { ...x.unread, [peer]: (x.unread[peer] ?? 0) + 1 } : x.unread,
   })
   const sendMsg = (peer: string, text: string, kind: Msg['kind'] = 'text') => {
     if (!text.trim()) return
+    if (kind !== 'market') bumpQuest('greet')
     if (ONLINE) {
       const tmp = { id: uid('tmp'), from: 'me', text: text.trim(), time: Date.now(), kind }
       up((x) => pushMsg(x, peer, tmp, false))
@@ -579,6 +652,7 @@ function useStoreImpl() {
     walkSim, setWalkSim, people, person,
     geo, geoError, startGeo, eggSpots: liveEggs, loadNearby,
     unreadChats, unreadNotifs, pet: pet as PetData, updatePet, bumpDaily,
+    world: (world ?? freshWorld()) as WorldDay, bumpQuest, claimQuest, careDone, checkIn, dismissTip,
   }
 }
 
