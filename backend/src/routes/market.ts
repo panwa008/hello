@@ -8,14 +8,25 @@ import { config } from '../config'
 const r = router()
 const TINTS = [['#FFE9D6', '#FFF6EE'], ['#DDF0FC', '#F2FAFF'], ['#EEE3FA', '#F8F3FF'], ['#DDF7E9', '#F2FFF8'], ['#FDE4EF', '#FFF5F9']]
 
+/**
+ * REAL GOODS MARKET (realm: 'real') — physical items only, new or used, meet-up/COD first.
+ * Digital goods (avatar cosmetics, pet eggs/food/gear) live in /shop/* and /avatar/* (realm: 'digital') and are rejected here.
+ */
+export const REAL_CATEGORIES = ['อิเล็กทรอนิกส์', 'ของใช้ในบ้าน', 'แฟชั่น', 'เฟอร์นิเจอร์', 'บ้านและสวน', 'แม่และเด็ก', 'งานอดิเรก', 'กีฬา', 'อื่น ๆ'] as const
+const DIGITAL_RX = /อวตาร|avatar|สกิน|skin|ไอเท็ม|item|ไข่สัตว์เลี้ยง|hello ?points|พอยท์|nft|ดิจิทัล|digital|ออร่า|aura/i
+const COND_RX = /^(ใหม่|มือสอง|เปิดกล่อง)/
+const CAT_SQL = `category IN (${REAL_CATEGORIES.map(() => '?').join(',')})`
+const condSql: Record<string, string> = { new: "AND (condition='ใหม่' OR condition LIKE 'ใหม่ %')", openbox: "AND condition LIKE 'เปิดกล่อง%'", used: "AND condition NOT LIKE 'เปิดกล่อง%' AND condition<>'ใหม่' AND condition NOT LIKE 'ใหม่ %'" }
+
 const PAYS: Record<string, string> = { truemoney: 'TrueMoney Wallet', promptpay: 'PromptPay', card: 'บัตรเครดิต', cod: 'จ่ายเงินตอนนัดรับ' }
 
 r.get('/market', (c) => {
-  const q = `%${(c.req.query('q') ?? '').toLowerCase()}%`, cat = c.req.query('category')
-  const rows = db.prepare(`SELECT * FROM listings WHERE status='active' AND lower(name) LIKE ? ${cat ? 'AND category=?' : ''} ORDER BY created_at DESC LIMIT 100`).all(...(cat ? [q, cat] : [q])) as never
-  return c.json({ ok: true, items: marketView(rows, c.get('userId')) })
+  // ?condition=new|used|openbox, ?category=<real category>; non-real categories never returned.
+  const q = `%${(c.req.query('q') ?? '').toLowerCase()}%`, cat = c.req.query('category'), cond = condSql[c.req.query('condition') ?? ''] ?? ''
+  const rows = (db.prepare(`SELECT * FROM listings WHERE status='active' AND ${CAT_SQL} AND lower(name) LIKE ? ${cat ? 'AND category=?' : ''} ${cond} ORDER BY created_at DESC LIMIT 100`).all(...REAL_CATEGORIES, ...(cat ? [q, cat] : [q])) as { name: string }[]).filter((l) => !DIGITAL_RX.test(l.name))
+  return c.json({ ok: true, realm: 'real', items: marketView(rows as never, c.get('userId')) })
 })
-r.post('/market/listings', body(z.object({ name: z.string().trim().min(1).max(80), thb: z.number().positive().max(1_000_000), category: z.string().max(40).default('อื่น ๆ'), condition: z.string().max(40).default('มือสอง'), emoji: z.string().max(8).default('📦'), points: z.number().int().positive().optional() })), (c) => {
+r.post('/market/listings', body(z.object({ name: z.string().trim().min(1).max(80).refine((n) => !DIGITAL_RX.test(n), 'ตลาดของจริงรับเฉพาะสินค้าจริง — ไอเท็มอวตาร/สัตว์เลี้ยงขายที่ร้านโลกอวตาร'), thb: z.number().positive().max(1_000_000), category: z.enum(REAL_CATEGORIES).default('อื่น ๆ'), condition: z.string().trim().max(40).regex(COND_RX, 'condition ต้องขึ้นต้นด้วย ใหม่ / มือสอง / เปิดกล่อง').default('มือสอง'), emoji: z.string().max(8).default('📦'), points: z.number().int().positive().optional() })), (c) => {
   const f = c.req.valid('json'), id = uid('ls')
   db.prepare('INSERT INTO listings (id,seller_id,name,thb,points,emoji,tint,condition,category,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id, c.get('userId'), f.name, f.thb, f.points ?? Math.round(f.thb * 100), f.emoji, JSON.stringify(TINTS[Math.floor(Math.random() * TINTS.length)]), f.condition, f.category, 'active', now())
   return done(c, { id }, 201)

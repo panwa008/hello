@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Play } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Btn } from '../../components/ui'
+import { Btn } from '../../../components/ui'
 
 type Obj = { id: number; lane: number; y: number; kind: 'star' | 'gold' | 'rock' }
 const DURATION = 30

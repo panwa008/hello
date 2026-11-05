@@ -16,10 +16,11 @@ import Game from './screens/Game'
 import Profile from './screens/Profile'
 import Wallet from './screens/Wallet'
 import More from './screens/More'
+import Accessories from './screens/Accessories'
 
 const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
   home: Home, explorer: Explorer, friends: Friends, chat: Chat, pets: Pets, petshop: PetShop, market: Market,
-  avatar: Avatar, avatarshop: AvatarShop, game: Game, profile: Profile, wallet: Wallet, more: More,
+  avatar: Avatar, avatarshop: AvatarShop, game: Game, accessories: Accessories, profile: Profile, wallet: Wallet, more: More,
 }
 
 export default function App() {

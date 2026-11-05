@@ -14,8 +14,8 @@ const DEV_FEATURES: Features = { env: 'development', demoBots: true, demoTopup: 
 
 export type Screen =
   | 'home' | 'explorer' | 'friends' | 'chat' | 'pets' | 'petshop' | 'market'
-  | 'avatar' | 'avatarshop' | 'game' | 'profile' | 'wallet' | 'more'
-export const SCREEN_IDS: Screen[] = ['home', 'explorer', 'friends', 'chat', 'pets', 'petshop', 'market', 'avatar', 'avatarshop', 'game', 'profile', 'wallet', 'more']
+  | 'avatar' | 'avatarshop' | 'game' | 'accessories' | 'profile' | 'wallet' | 'more'
+export const SCREEN_IDS: Screen[] = ['home', 'explorer', 'friends', 'chat', 'pets', 'petshop', 'market', 'avatar', 'avatarshop', 'game', 'accessories', 'profile', 'wallet', 'more']
 
 export interface Outfit { hair: string; top: string; bottom: string; shoes: string; acc: string; aura?: string; backpack?: string }
 export type PetSlot = 'head' | 'face' | 'neck' | 'back'

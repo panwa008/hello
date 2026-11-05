@@ -3,9 +3,11 @@ export type ItemKind = 'egg' | 'food' | 'pet_cosmetic' | 'wardrobe'
 export type AvatarSlot = 'hair' | 'top' | 'bottom' | 'shoes' | 'acc' | 'aura' | 'backpack'
 export type PetSlot = 'head' | 'face' | 'neck' | 'back'
 
-export interface CatalogItem { id: string; name: string; price: number; kind: ItemKind; emoji: string; rarity?: string; slot?: AvatarSlot | PetSlot }
+/** Everything in CATALOG is realm 'digital' (Hello Points only, not real goods). Real goods = /market listings. */
+export type Realm = 'real' | 'digital'
+export interface CatalogItem { realm?: Realm; id: string; name: string; price: number; kind: ItemKind; emoji: string; rarity?: string; slot?: AvatarSlot | PetSlot }
 
-const I = (id: string, name: string, price: number, kind: ItemKind, emoji: string, extra: Partial<CatalogItem> = {}): CatalogItem => ({ id, name, price, kind, emoji, ...extra })
+const I = (id: string, name: string, price: number, kind: ItemKind, emoji: string, extra: Partial<CatalogItem> = {}): CatalogItem => ({ realm: 'digital', id, name, price, kind, emoji, ...extra })
 
 export const CATALOG: CatalogItem[] = [
   // eggs

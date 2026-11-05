@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
-import { Btn } from '../../components/ui'
+import { Btn } from '../../../components/ui'
 
 const N = 7, MOVES = 24
 type Cell = 'empty' | 'gem' | 'trap' | 'egg' | 'tree'

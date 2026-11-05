@@ -1,9 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
-import { PALETTES, PetDragon } from '../../components/art'
-import { Btn } from '../../components/ui'
-import { PEOPLE } from '../../data/mock'
-import type { PetData } from '../../store/AppStore'
+import { PALETTES, PetDragon } from '../../../components/art'
+import { Btn } from '../../../components/ui'
+import { PEOPLE } from '../../../data/mock'
+import type { PetData } from '../../../store/AppStore'
 
 type Act = 'atk' | 'sp' | 'def' | 'heal'
 const rnd = (a: number, b: number) => a + Math.floor(Math.random() * (b - a + 1))

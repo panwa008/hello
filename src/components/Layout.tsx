@@ -1,26 +1,14 @@
 import { motion } from 'framer-motion'
-import { Bell, Compass, Ellipsis, Gamepad2, House, PawPrint, Search, Shirt, Store, User, Users, Wallet, Egg, Sparkles, MessageCircle, LogOut, CheckCheck } from 'lucide-react'
+import { Bell, Compass, Ellipsis, House, PawPrint, Search, MessageCircle, LogOut, CheckCheck } from 'lucide-react'
+import { WORLDS } from '../domains/nav'
+import { REALM } from '../domains/shared/realm'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useApp, type Screen, type User as U } from '../store/AppStore'
 import { Face, PawLogo } from './art'
 import { Points, Sheet } from './ui'
 import { ago } from '../lib/storage'
 
-export const NAV: { id: Screen; label: string; en: string; icon: typeof House }[] = [
-  { id: 'home', label: 'หน้าหลัก', en: 'Home', icon: House },
-  { id: 'explorer', label: 'สำรวจ', en: 'Explorer', icon: Compass },
-  { id: 'chat', label: 'แชท', en: 'Chat', icon: MessageCircle },
-  { id: 'friends', label: 'เพื่อน', en: 'Friends', icon: Users },
-  { id: 'pets', label: 'สัตว์เลี้ยง', en: 'Pets', icon: PawPrint },
-  { id: 'petshop', label: 'ร้านสัตว์เลี้ยง', en: 'Pet Shop', icon: Egg },
-  { id: 'market', label: 'ตลาด', en: 'Market', icon: Store },
-  { id: 'avatar', label: 'อวตาร', en: 'Avatar', icon: Sparkles },
-  { id: 'avatarshop', label: 'ร้านแต่งตัว', en: 'Avatar Shop', icon: Shirt },
-  { id: 'game', label: 'เกม', en: 'Game', icon: Gamepad2 },
-  { id: 'wallet', label: 'กระเป๋าเงิน', en: 'Wallet', icon: Wallet },
-  { id: 'profile', label: 'โปรไฟล์', en: 'Profile', icon: User },
-  { id: 'more', label: 'เพิ่มเติม', en: 'More', icon: Ellipsis },
-]
+export { NAV } from '../domains/nav'
 
 export const meFace = (u: Pick<U, 'hair' | 'skin' | 'gender'> | null) => ({ id: 'me', hair: u?.hair ?? '#7A4A35', skin: u?.skin ?? '#FCE0CF', bg: ['#FBE3EE', '#E6DBFA'] as [string, string], gender: u?.gender ?? ('f' as const) })
 export function MeFace({ size = 36, ring }: { size?: number; ring?: string }) {
@@ -49,18 +37,23 @@ function Sidebar() {
     <aside className="glass sticky top-4 hidden h-[calc(100vh-2rem)] w-60 shrink-0 flex-col rounded-[32px] p-5 lg:flex">
       <Brand />
       <nav className="mt-5 flex-1 space-y-0.5 overflow-y-auto no-scrollbar">
-        {NAV.map((n) => {
-          const active = screen === n.id
-          const badge = n.id === 'chat' ? unreadChats : n.id === 'friends' ? requests.length : 0
-          return (
-            <button key={n.id} onClick={() => go(n.id)} className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors ${active ? 'text-plum-600' : 'text-ink/60 hover:text-ink hover:bg-white/50'}`}>
-              {active && <motion.span layoutId="side-active" className="absolute inset-0 rounded-2xl bg-white shadow-[0_6px_18px_-8px_rgba(126,91,181,.45)]" transition={{ type: 'spring', stiffness: 400, damping: 34 }} />}
-              <n.icon size={18} className="relative" />
-              <span className="relative">{n.label}</span>
-              {badge > 0 ? <Badge n={badge} className="relative ml-auto" /> : <span className="relative ml-auto text-[10px] text-ink/30">{n.en}</span>}
-            </button>
-          )
-        })}
+        {WORLDS.map((g) => (
+          <div key={g.key} className="pb-1">
+            {g.key !== 'core' && <div className={`mx-1 mb-1 mt-3 flex items-center gap-1.5 rounded-xl px-2 py-1 text-[10px] font-bold tracking-[0.16em] uppercase ${g.key === 'real' || g.key === 'digital' ? REALM[g.key].text : 'text-ink/35'}`} style={g.key === 'real' || g.key === 'digital' ? { background: REALM[g.key].grad } : undefined}>{g.emoji} {g.th} <span className="font-medium opacity-60">· {g.en}</span></div>}
+            {g.items.map((n) => {
+              const active = screen === n.id
+              const badge = n.id === 'chat' ? unreadChats : n.id === 'friends' ? requests.length : 0
+              return (
+                <button key={n.id} onClick={() => go(n.id)} className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition-colors ${active ? 'text-plum-600' : 'text-ink/60 hover:text-ink hover:bg-white/50'}`}>
+                  {active && <motion.span layoutId="side-active" className="absolute inset-0 rounded-2xl bg-white shadow-[0_6px_18px_-8px_rgba(126,91,181,.45)]" transition={{ type: 'spring', stiffness: 400, damping: 34 }} />}
+                  <n.icon size={18} className="relative" />
+                  <span className="relative">{n.label}</span>
+                  {badge > 0 ? <Badge n={badge} className="relative ml-auto" /> : <span className="relative ml-auto text-[10px] text-ink/30">{n.en}</span>}
+                </button>
+              )
+            })}
+          </div>
+        ))}
       </nav>
       <button onClick={() => go('wallet')} className="mt-3 rounded-3xl bg-gradient-to-br from-[#CDB8F2] to-[#9B7EBD] p-4 text-left text-white shadow-lg">
         <div className="text-xs opacity-80">Hello Points</div>
@@ -188,13 +181,27 @@ export function Layout({ children }: { children: ReactNode }) {
       <BottomNav onMore={() => setMore(true)} />
       <Notifications open={bell} onClose={() => setBell(false)} />
       <Sheet open={more} onClose={() => setMore(false)} title="เมนูทั้งหมด">
-        <div className="grid grid-cols-4 gap-3 pt-2">
-          {NAV.map((n) => (
-            <motion.button whileTap={{ scale: 0.92 }} key={n.id} onClick={() => { go(n.id); setMore(false) }} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/70 p-3">
-              <n.icon size={22} className="text-plum-600" />
-              <span className="text-[11px] font-medium text-ink/70 text-center leading-tight">{n.label}</span>
-            </motion.button>
-          ))}
+        <div className="space-y-4 pt-1">
+          {WORLDS.map((g) => {
+            const realm = g.key === 'real' || g.key === 'digital' ? REALM[g.key] : null
+            return (
+              <section key={g.key} className={realm ? 'rounded-[24px] p-3' : ''} style={realm ? { background: realm.grad } : undefined}>
+                <div className="mb-2 flex items-baseline gap-2 px-1">
+                  <span className={`text-xs font-bold ${realm ? realm.text : 'text-ink/50'}`}>{g.emoji} {g.th}</span>
+                  <span className="text-[10px] tracking-[0.15em] text-ink/40 uppercase">{g.en}</span>
+                  {realm && <span className="ml-auto truncate text-[10px] text-ink/45">{realm.tagline}</span>}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {g.items.map((n) => (
+                    <motion.button whileTap={{ scale: 0.92 }} key={n.id} onClick={() => { go(n.id); setMore(false) }} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/75 p-2.5">
+                      <n.icon size={22} className="text-plum-600" />
+                      <span className="text-center text-[11px] font-medium leading-tight text-ink/70">{n.label}</span>
+                    </motion.button>
+                  ))}
+                </div>
+              </section>
+            )
+          })}
         </div>
         <button onClick={() => { setMore(false); logout() }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-white/70 py-3 text-sm font-semibold text-rose-500"><LogOut size={16} /> ออกจากระบบ</button>
       </Sheet>

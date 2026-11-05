@@ -172,3 +172,6 @@ Copy `hello-backend/.env.production.example` → `.env.production`, fill it in, 
 
 ### API reference
 Full route list: [`../hello-backend/README.md`](../hello-backend/README.md). All mutations return `{ ok, result, state }`.
+
+## Real world vs Avatar world (domains)
+Frontend code lives in `src/domains/` (`market-real`, `market-digital`, `avatar`, `pets`, `games`, `accessories`, `shared`); `src/screens/*` are thin re-exports. `/market` is the **Real Goods Market** only: listings must use a real-world category (`REAL_CATEGORIES`) and a condition starting with `ใหม่` / `มือสอง` / `เปิดกล่อง`; names that look like digital items are rejected and filtered. `GET /market?condition=new|used|openbox`. Avatar/pet cosmetics, eggs and food stay in `/shop/*` + `/avatar/*` (`realm: 'digital'`, Hello Points only). Online THB P2P remains 501 in live mode.

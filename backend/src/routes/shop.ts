@@ -5,6 +5,7 @@ import { CATALOG, ITEM, LOOT, EGG_HUE, EGG_DUR, AVATAR_SLOTS, OPTIONAL_SLOTS, pr
 import { debit, credit, grant, qtyOf, addEgg, createPet, petView, outfitOf } from '../services'
 
 const r = router()
+// DIGITAL SHOPS (realm: digital) — Pet Shop + Avatar Shop, Hello Points only. Never real goods.
 r.get('/shop/catalog', (c) => c.json({ ok: true, items: CATALOG.map((i) => ({ ...i, salePrice: SALE.has(i.id) ? priceOf(i) : undefined })), loot: LOOT.map(({ w, ...l }) => ({ ...l, chance: w })) }))
 
 /** Pet shop: eggs, food, pet cosmetics. */
