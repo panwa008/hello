@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Runs the API (3001) and the web dev server (5173) together. Ctrl+C stops both.
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -25,14 +25,29 @@ const procs = [
   start('web', rootDir, ['run', 'dev:web']),
 ]
 
+function killTree(pid) {
+  if (!pid) return
+  if (isWin) {
+    spawn('taskkill', ['/pid', String(pid), '/f', '/t'], { stdio: 'ignore', shell: true })
+    return
+  }
+  let children = []
+  try {
+    children = execFileSync('ps', ['-o', 'pid=', '--ppid', String(pid)], { encoding: 'utf8' })
+      .split(/\s+/)
+      .map(Number)
+      .filter(Boolean)
+  } catch {
+    children = []
+  }
+  for (const childPid of children) killTree(childPid)
+  try { process.kill(pid, 'SIGTERM') } catch { /* already gone */ }
+}
+
 function killAll() {
   for (const p of procs) {
-    if (!p.pid || p.killed) continue
-    if (isWin) {
-      spawn('taskkill', ['/pid', String(p.pid), '/f', '/t'], { stdio: 'ignore', shell: true })
-    } else {
-      p.kill('SIGINT')
-    }
+    if (!p.pid) continue
+    killTree(p.pid)
   }
 }
 
