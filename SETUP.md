@@ -1,6 +1,6 @@
 # Hello — Setup / วิธีติดตั้ง
 
-Full-stack: **web** (`hello/`, React 19 + Vite 8 + Tailwind 4) + **API** (`hello-backend/`, Node + TypeScript + Hono + better-sqlite3 + JWT + Zod).
+Full-stack: **web** (`hello/`, React 19 + Vite 8 + Tailwind 4) + **API** (`backend/`, Node + TypeScript + Hono + better-sqlite3 + JWT + Zod).
 Web → http://localhost:5173 · API → http://localhost:3001 (`/api/health`)
 
 Demo login / บัญชีทดลอง: **mayy@hello.app / hello123**
@@ -10,15 +10,16 @@ Demo login / บัญชีทดลอง: **mayy@hello.app / hello123**
 ## 🇹🇭 ภาษาไทย
 
 ### 1. เริ่มใช้งานเร็ว (npm)
-ต้องมี Node.js 20+ (แนะนำ 22) วางสองโฟลเดอร์ไว้ข้างกัน: `hello/` และ `hello-backend/`
+ต้องมี **Node.js 20 หรือ 22 LTS** (แนะนำ 22) โปรเจกต์เป็นโมโนเรโป: เว็บอยู่ที่ root ของ `hello/` และ API อยู่ที่ `backend/`
+`npm run setup` จะคัดลอกไฟล์ `.env` และสร้างฐานข้อมูลให้แล้ว ไม่ต้องรัน `cp` เอง
 ```bash
 cd hello
 npm run setup                          # ติดตั้ง dependency ทั้ง web + api
 cp .env.example .env                   # (ไม่บังคับ)
-cp ../hello-backend/.env.example ../hello-backend/.env   # ตั้ง JWT_SECRET
+cp backend/.env.example backend/.env   # ตั้ง JWT_SECRET
 npm run dev                            # รัน api (3001) + web (5173) พร้อมกัน
 ```
-เปิด http://localhost:5173 แล้วล็อกอินด้วยบัญชีทดลอง ฐานข้อมูลจะสร้างและ seed อัตโนมัติครั้งแรก (`hello-backend/data/hello.db`)
+เปิด http://localhost:5173 แล้วล็อกอินด้วยบัญชีทดลอง ฐานข้อมูลจะสร้างและ seed อัตโนมัติครั้งแรก (`backend/data/hello.db`)
 
 คำสั่งอื่น:
 | คำสั่ง (ใน `hello/`) | ทำอะไร |
@@ -28,7 +29,40 @@ npm run dev                            # รัน api (3001) + web (5173) พ�
 | `npm run start:api` | รัน api จาก build (production) |
 | `npm run preview` | เสิร์ฟ web ที่ build แล้ว (proxy `/api` ด้วย) |
 | `npm run smoke` | smoke test API (ต้องเปิด api อยู่) |
-| `npm --prefix ../hello-backend run seed` | ล้างฐานข้อมูลแล้ว seed ใหม่ |
+| `npm --prefix backend run seed` | ล้างฐานข้อมูลแล้ว seed ใหม่ |
+
+### 1.1 รันบน Windows (PowerShell)
+
+ใช้ **Node.js 20 หรือ 22 LTS** (แนะนำ 22 — ดาวน์โหลดตัวติดตั้ง LTS จาก [nodejs.org](https://nodejs.org)) และ **Git for Windows** ไม่ต้องมี Docker สำหรับรันแบบพัฒนา
+
+เปิด PowerShell แล้วรัน:
+
+```powershell
+git clone https://github.com/panwa008/hello.git
+cd hello
+npm run setup
+npm run dev
+```
+
+จากนั้นเปิด http://localhost:5173 (เว็บ) และตรวจ API ที่ http://localhost:3001/api/health  
+บัญชีทดลอง: **mayy@hello.app / hello123**
+
+`npm run setup` จะติดตั้ง dependency ทั้งเว็บและ API, คัดลอกไฟล์ `.env` ถ้ายังไม่มี และสร้างฐานข้อมูลพร้อมข้อมูลทดลองให้
+
+#### ถ้าติดขัด
+
+- **`npm` รันไม่ได้ / ข้อผิดพลาด execution policy ของ `npm.ps1`**  
+  ใช้ `npm.cmd` แทน เช่น `npm.cmd run setup` หรืออนุญาตสคริปต์ของบัญชีนี้:  
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+- **พอร์ต 5173 หรือ 3001 ถูกใช้แล้ว**  
+  ปิดหน้าต่างเทอร์มินัลรอบก่อน หรือใน PowerShell:  
+  `Get-NetTCPConnection -LocalPort 5173,3001 -ErrorAction SilentlyContinue` แล้ว `Stop-Process -Id <OwningProcess> -Force`
+- **ติดตั้ง `better-sqlite3` ไม่ผ่าน / ขึ้นข้อความ node-gyp, Python, MSBuild**  
+  โปรเจกต์ล็อกเวอร์ชันที่มีไฟล์สำเร็จรูปสำหรับ Node 20 และ 22 อยู่แล้ว ไม่ต้องลง Visual Studio Build Tools  
+  ตรวจว่าเป็น Node 20 หรือ 22 LTS (`node -v`) แล้วรัน `npm --prefix backend rebuild better-sqlite3`  
+  ถ้าใช้ Node 18, 23, 24 หรือรุ่นอื่น ให้ถอนแล้วลง Node 22 LTS
+- **`npm run smoke`** ต้องมี Git Bash (มากับ Git for Windows) เพราะเป็นสคริปต์ bash
+- **Docker เป็นทางเลือก** ไม่จำเป็นสำหรับการพัฒนา ถ้ามี Docker Desktop: จากโฟลเดอร์โปรเจกต์รัน `docker compose up --build`
 
 ### 2. Docker
 ```bash
@@ -45,7 +79,7 @@ web (nginx) ที่พอร์ต 5173 (รวม WebSocket `/api/socket.io`)
 - `API_PROXY_TARGET` — ปลายทาง proxy ของ Vite (ค่าเริ่มต้น `http://localhost:3001`)
 - `HTTPS=1` — เปิด HTTPS (self-signed) สำหรับทดสอบ GPS บนมือถือ
 
-**API (`hello-backend/.env`)** — ดูทุกตัวใน `hello-backend/.env.example` (dev) และ `hello-backend/.env.production.example` (production)
+**API (`backend/.env`)** — ดูทุกตัวใน `backend/.env.example` (dev) และ `backend/.env.production.example` (production)
 - เมื่อ `NODE_ENV=production` ค่าเริ่มต้นจะเปลี่ยนเป็นโหมดจริงอัตโนมัติ: `DEMO_BOTS/DEMO_TOPUP/DEMO_SEED/ALLOW_SIM_STEPS/ALLOW_MANUAL_STEPS/ALLOW_MOCK_LOCATION=false`, `TRUEMONEY_MODE=live`, `BCRYPT_ROUNDS=12`, `TRUST_PROXY=true`
 - เซิร์ฟเวอร์ **ไม่ยอมบูต** (exit 78) ถ้า production ไม่มี `JWT_SECRET` (≥32 ตัว) หรือ `CORS_ORIGIN` เป็น `*`/ไม่ใช่ https
 
@@ -80,11 +114,10 @@ npm run smoke:prod-config    # บูต API แบบ NODE_ENV=production บ�
 
 ### 7. Deploy production
 ```bash
-cd hello-backend
-cp .env.production.example .env.production     # ห้าม commit — .gitignore กันไว้แล้ว
+cd hello
+cp backend/.env.production.example backend/.env.production     # ห้าม commit — .gitignore กันไว้แล้ว
 # แก้: JWT_SECRET=$(openssl rand -hex 32), CORS_ORIGIN=https://<โดเมน>, PUBLIC_API_URL=https://<โดเมน>, TRUEMONEY_* จากสัญญา merchant
-cd ../hello
-HELLO_ENV_FILE=../hello-backend/.env.production NODE_ENV=production docker compose up --build -d
+HELLO_ENV_FILE=./backend/.env.production NODE_ENV=production docker compose up --build -d
 docker compose logs api | head          # ต้องเห็น "(production, payments=live)" และไม่มี ✖
 curl -s https://<โดเมน>/api/health      # features.env = production, demoBots=false
 ```
@@ -110,15 +143,15 @@ curl -s https://<โดเมน>/api/health      # features.env = production, d
 ## 🇬🇧 English
 
 ### 1. Quick start (npm)
-Node.js 20+ (22 recommended). Keep `hello/` and `hello-backend/` side by side.
+Use **Node.js 20 or 22 LTS** (22 recommended). This is a monorepo: the web app lives at the `hello/` repo root and the API lives in `backend/`. `npm run setup` also copies `.env` files and seeds the database, so the `cp` steps below are optional.
 ```bash
 cd hello
 npm run setup                          # installs web + api deps
 cp .env.example .env                   # optional
-cp ../hello-backend/.env.example ../hello-backend/.env   # set JWT_SECRET
+cp backend/.env.example backend/.env   # set JWT_SECRET
 npm run dev                            # api (3001) + web (5173) together
 ```
-Open http://localhost:5173 and sign in with the demo account. The SQLite DB is created and seeded automatically on first start (`hello-backend/data/hello.db`).
+Open http://localhost:5173 and sign in with the demo account. The SQLite DB is created and seeded automatically on first start (`backend/data/hello.db`).
 
 | Script (in `hello/`) | Purpose |
 |---|---|
@@ -127,7 +160,21 @@ Open http://localhost:5173 and sign in with the demo account. The SQLite DB is c
 | `npm run start:api` | run the built api |
 | `npm run preview` | serve built web (also proxies `/api`) |
 | `npm run smoke` | API smoke test (api must be running) |
-| `npm --prefix ../hello-backend run seed` | wipe + reseed the DB |
+| `npm --prefix ./backend run seed` | wipe + reseed the DB |
+
+
+### 1.1 Windows (PowerShell)
+
+See the Thai section **1.1** above for the full walkthrough and troubleshooting. Short version: install Node.js 22 LTS and Git for Windows, then in PowerShell:
+
+```powershell
+git clone https://github.com/panwa008/hello.git
+cd hello
+npm run setup
+npm run dev
+```
+
+Open http://localhost:5173 — demo login `mayy@hello.app` / `hello123`. If PowerShell blocks `npm.ps1`, use `npm.cmd` or `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. If `better-sqlite3` fails to install, switch to Node 20 or 22 LTS and run `npm --prefix backend rebuild better-sqlite3`. Docker is optional.
 
 ### 2. Docker
 ```bash
@@ -143,7 +190,7 @@ nginx serves the web on 5173 and proxies `/api/` (incl. the `/api/socket.io` Web
 - `API_PROXY_TARGET` — Vite proxy target (default `http://localhost:3001`)
 - `HTTPS=1` — self-signed HTTPS dev server, for GPS on phones
 
-**API** — see `hello-backend/.env.example` (dev) and `hello-backend/.env.production.example` (production). `NODE_ENV=production` switches every demo flag off, `TRUEMONEY_MODE` to `live`, bcrypt cost to 12 and trusts the proxy. The API refuses to boot (exit 78) without a strong `JWT_SECRET` and an https `CORS_ORIGIN` list.
+**API** — see `backend/.env.example` (dev) and `backend/.env.production.example` (production). `NODE_ENV=production` switches every demo flag off, `TRUEMONEY_MODE` to `live`, bcrypt cost to 12 and trusts the proxy. The API refuses to boot (exit 78) without a strong `JWT_SECRET` and an https `CORS_ORIGIN` list.
 
 ### 4. GPS / Explorer
 - Browsers only expose geolocation on **HTTPS or localhost**. For a phone on your LAN: `HTTPS=1 npm run dev:web`, open `https://<your-LAN-IP>:5173`, accept the certificate.
@@ -168,10 +215,10 @@ Covers login/refresh, GPS + nearby rules, PetShop/AvatarShop buys, equip, 7-slot
 - In-memory rate limits and SQLite = single instance. Use Redis (+ socket.io Redis adapter) / Postgres to scale out.
 
 ### 7. Production deploy
-Copy `hello-backend/.env.production.example` → `.env.production`, fill it in, then `HELLO_ENV_FILE=../hello-backend/.env.production NODE_ENV=production docker compose up --build -d`. Terminate HTTPS in front of nginx and register `https://<domain>/api/payments/truemoney/webhook` with TrueMoney. Go through the Thai checklist above ("ก่อนเปิดจริงต้องมี…") and `CAUTIONS.md` before launch.
+Copy `backend/.env.production.example` → `backend/.env.production`, fill it in, then `HELLO_ENV_FILE=./backend/.env.production NODE_ENV=production docker compose up --build -d`. Terminate HTTPS in front of nginx and register `https://<domain>/api/payments/truemoney/webhook` with TrueMoney. Go through the Thai checklist above ("ก่อนเปิดจริงต้องมี…") and `CAUTIONS.md` before launch.
 
 ### API reference
-Full route list: [`../hello-backend/README.md`](../hello-backend/README.md). All mutations return `{ ok, result, state }`.
+Full route list: [`backend/README.md`](backend/README.md). All mutations return `{ ok, result, state }`.
 
 ## Real world vs Avatar world (domains)
 Frontend code lives in `src/domains/` (`market-real`, `market-digital`, `avatar`, `pets`, `games`, `accessories`, `shared`); `src/screens/*` are thin re-exports. `/market` is the **Real Goods Market** only: listings must use a real-world category (`REAL_CATEGORIES`) and a condition starting with `ใหม่` / `มือสอง` / `เปิดกล่อง`; names that look like digital items are rejected and filtered. `GET /market?condition=new|used|openbox`. Avatar/pet cosmetics, eggs and food stay in `/shop/*` + `/avatar/*` (`realm: 'digital'`, Hello Points only). Online THB P2P remains 501 in live mode.

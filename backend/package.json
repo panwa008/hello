@@ -1,12 +1,12 @@
 {
   "name": "hello-backend",
   "version": "1.0.0",
-  "description": "Hello API — Hono + SQLite + JWT",
+  "description": "Hello API \u2014 Hono + SQLite + JWT",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node --env-file-if-exists=.env dist/index.js",
+    "start": "node dist/index.js",
     "seed": "tsx src/seed.ts --force",
     "seed:prod": "node dist/seed.js --force",
     "typecheck": "tsc --noEmit",
@@ -21,7 +21,7 @@
     "@hono/node-server": "^2.1.5",
     "@hono/zod-validator": "^0.9.1",
     "bcryptjs": "^3.0.3",
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "12.11.1",
     "hono": "^4.13.14",
     "socket.io": "^4.8.4",
     "zod": "^4.6.7"
@@ -34,7 +34,7 @@
     "typescript": "^7.0.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20.x || 22.x"
   },
   "private": true
 }

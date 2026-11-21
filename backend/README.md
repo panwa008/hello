@@ -129,4 +129,4 @@ Crediting is exactly-once (event dedupe + unique index on `transactions(ref)` fo
 Socket.io at `/api/socket.io`, `auth: { token: <accessToken> }`. Server → client hints: `chat:message`, `presence`, `presence:list`, `explorer:changed`, `payment:update`, `state:changed`.
 
 ### Production
-`NODE_ENV=production` → demo features off, TrueMoney live, bcrypt 12, trust proxy. Boot fails (exit 78) without a strong `JWT_SECRET` and https `CORS_ORIGIN`. See `.env.production.example`, `../hello/SETUP.md` §7 and `../hello/CAUTIONS.md`. Verify with `npm run smoke:prod-config`.
+`NODE_ENV=production` → demo features off, TrueMoney live, bcrypt 12, trust proxy. Boot fails (exit 78) without a strong `JWT_SECRET` and https `CORS_ORIGIN`. See `.env.production.example`, `../SETUP.md` §7 and `../CAUTIONS.md`. Verify with `npm run smoke:prod-config`.

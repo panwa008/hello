@@ -1,3 +1,4 @@
+import './load-env'
 import { db, now, today, uid, tx } from './db'
 import { hashPassword } from './auth'
 import { config } from './config'

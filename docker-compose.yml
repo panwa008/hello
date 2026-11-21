@@ -1,14 +1,14 @@
 # Hello full stack.
 #   Dev / demo:   docker compose up --build      (sandbox payments, demo people, simulated steps)
-#   Production:   cp ../hello-backend/.env.production.example ../hello-backend/.env.production
+#   Production:   cp ./backend/.env.production.example ./backend/.env.production
 #                 # fill in JWT_SECRET, CORS_ORIGIN, PUBLIC_API_URL, TRUEMONEY_* …
-#                 HELLO_ENV_FILE=../hello-backend/.env.production docker compose up --build -d
+#                 HELLO_ENV_FILE=./backend/.env.production docker compose up --build -d
 #   web http://localhost:5173  ·  api http://localhost:3001/api/health   (put HTTPS in front for real use)
 services:
   api:
-    build: ../hello-backend
+    build: ./backend
     env_file:
-      - path: ${HELLO_ENV_FILE:-../hello-backend/.env}
+      - path: ${HELLO_ENV_FILE:-./backend/.env}
         required: false
     environment:
       PORT: "3001"
